@@ -6,13 +6,12 @@
         <p class="page-desc">维护扑火队伍，围绕队伍编号、队伍名称、所属林场、队长姓名做登记、筛选与状态流转。</p>
       </div>
       <div class="page-actions">
-        <button class="btn primary" type="button" @click="openCreate">登记扑火队伍</button>
         <button class="btn" type="button" @click="exportRows">导出扑火队伍清单</button>
       </div>
     </header>
 
     <div class="stat-row">
-      <article v-for="item in stats" :key="item.label" class="stat-card">
+      <article v-for="item in statCards" :key="item.label" class="stat-card">
         <span class="stat-label">{{ item.label }}</span>
         <strong class="stat-value">{{ item.value }}</strong>
       </article>
@@ -82,10 +81,9 @@ import {
 import type { EntryRow } from '@/data/types'
 
 const meta = moduleMeta('fireteam')
-const columns = ["队伍编号", "队伍名称", "所属林场", "队长姓名", "队员人数", "集结半径", "值班状态", "出动状态"]
+const columns = ["队伍编号", "队伍名称", "所属林场", "队长姓名", "队员人数", "集结半径", "器材待办", "值班状态", "出动状态"]
 const actions = ["下达出动", "转入休整", "撤回队伍"]
 const statuses = ["在营待命", "已出动", "扑救中", "已撤回", "休整中"]
-const stats = [{"label": "队伍总数", "value": 0}, {"label": "待命队伍", "value": 0}, {"label": "出动队伍", "value": 0}]
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
@@ -98,6 +96,12 @@ const statusSummary = computed(() =>
     count: rows.value.filter((row) => String(row.status) === status).length,
   })),
 )
+const statCards = computed(() => [
+  { label: "队伍总数", value: rows.value.length },
+  { label: "待命队伍", value: rows.value.filter((row) => String(row.status) === "在营待命").length },
+  { label: "器材待办合计", value: rows.value.reduce((sum, row) => sum + Number(row["器材待办"] ?? 0), 0) },
+  { label: "出动队伍", value: rows.value.filter((row) => ["已出动", "扑救中"].includes(String(row.status))).length },
+])
 
 function resetFilters() {
   filters.value = {}
@@ -106,10 +110,6 @@ function resetFilters() {
 
 function exportRows() {
   downloadEntries(meta.key)
-}
-
-function openCreate() {
-  errorMessage.value = '扑火队伍登记入口尚未接入审批流'
 }
 
 function runAction(action: string, row: EntryRow) {

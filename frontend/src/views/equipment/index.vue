@@ -6,13 +6,13 @@
         <p class="page-desc">维护消防装备，围绕装备编号、装备名称、装备类型、规格型号做登记、筛选与状态流转。</p>
       </div>
       <div class="page-actions">
-        <button class="btn primary" type="button" @click="openCreate">登记消防装备</button>
+        <RouterLink class="btn primary" to="/equipment-transfer">进入跨林场批量调拨台</RouterLink>
         <button class="btn" type="button" @click="exportRows">导出消防装备清单</button>
       </div>
     </header>
 
     <div class="stat-row">
-      <article v-for="item in stats" :key="item.label" class="stat-card">
+      <article v-for="item in statCards" :key="item.label" class="stat-card">
         <span class="stat-label">{{ item.label }}</span>
         <strong class="stat-value">{{ item.value }}</strong>
       </article>
@@ -82,10 +82,9 @@ import {
 import type { EntryRow } from '@/data/types'
 
 const meta = moduleMeta('equipment')
-const columns = ["装备编号", "装备名称", "装备类型", "规格型号", "保管林场", "购入日期", "最近检修日", "装备状态"]
+const columns = ["装备编号", "装备名称", "装备类型", "规格型号", "保管林场", "领用优先级", "购入日期", "最近检修日", "装备状态"]
 const actions = ["领用装备", "送检登记", "报废装备"]
-const statuses = ["可用", "已领用", "待检修", "已报废"]
-const stats = [{"label": "装备总数", "value": 0}, {"label": "可用装备", "value": 0}, {"label": "待检修数", "value": 0}]
+const statuses = ["可用", "调拨中", "已领用", "待检修", "已报废"]
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
@@ -98,6 +97,12 @@ const statusSummary = computed(() =>
     count: rows.value.filter((row) => String(row.status) === status).length,
   })),
 )
+const statCards = computed(() => [
+  { label: "装备总数", value: rows.value.length },
+  { label: "可用装备", value: rows.value.filter((row) => String(row.status) === "可用").length },
+  { label: "调拨中", value: rows.value.filter((row) => String(row.status) === "调拨中").length },
+  { label: "待检修数", value: rows.value.filter((row) => String(row.status) === "待检修").length },
+])
 
 function resetFilters() {
   filters.value = {}
@@ -106,10 +111,6 @@ function resetFilters() {
 
 function exportRows() {
   downloadEntries(meta.key)
-}
-
-function openCreate() {
-  errorMessage.value = '消防装备登记入口尚未接入审批流'
 }
 
 function runAction(action: string, row: EntryRow) {
